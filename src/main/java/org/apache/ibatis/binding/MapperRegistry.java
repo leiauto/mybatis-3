@@ -57,6 +57,7 @@ public class MapperRegistry {
     return knownMappers.containsKey(type);
   }
 
+
   public <T> void addMapper(Class<T> type) {
     if (type.isInterface()) {
       if (hasMapper(type)) {
@@ -64,6 +65,10 @@ public class MapperRegistry {
       }
       boolean loadCompleted = false;
       try {
+
+        /**
+         * TODO 为mapper生成代理对象
+         */
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the

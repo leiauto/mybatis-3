@@ -72,9 +72,27 @@ public class SqlSessionFactoryBuilder {
     return build(inputStream, null, properties);
   }
 
+  /**
+   * 构建SqlSessionFactory对象 （）
+   * @param inputStream 配置文件流
+   * @param environment 环境变量，在配置文件中可以配置多个数据源等环境
+   * @param properties
+   * @return
+   */
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
+
+      /**
+       * 初始化一个xml配置解析器，里面都是XMLConfigBuilder的属性的初始化（Configuration、XPathParser）
+       *
+       */
       XMLConfigBuilder parser = new XMLConfigBuilder(inputStream, environment, properties);
+
+      /**
+       * 1、通过parser.parse()解析生成{@link Configuration}对象
+       * 2、build构建一个{@link DefaultSqlSessionFactory}
+       * @TODO 重点内容parser.parse()
+       */
       return build(parser.parse());
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);

@@ -318,7 +318,6 @@ class BaseExecutorTest extends BaseDataTest {
       assertNull(author.getBio());
     } catch (ExecutorException e) {
       if (executor instanceof CachingExecutor) {
-        // TODO see issue #464. Fail is OK.
         assertTrue(e.getMessage().contains("OUT params is not supported"));
       } else {
         throw e;

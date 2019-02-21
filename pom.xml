@@ -267,6 +267,16 @@
       <version>2.10</version>
       <scope>test</scope>
     </dependency>
+
+
+    <!--引入mysql驱动-->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.46</version>
+    </dependency>
+
+
   </dependencies>
 
   <build>

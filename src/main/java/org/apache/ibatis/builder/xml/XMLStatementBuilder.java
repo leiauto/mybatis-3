@@ -54,46 +54,89 @@ public class XMLStatementBuilder extends BaseBuilder {
   }
 
   public void parseStatementNode() {
-    String id = context.getStringAttribute("id");
+    String id = context.getStringAttribute("id");//selectById
     String databaseId = context.getStringAttribute("databaseId");
 
     if (!databaseIdMatchesCurrent(id, databaseId, this.requiredDatabaseId)) {
       return;
     }
 
-    String nodeName = context.getNode().getNodeName();
+    String nodeName = context.getNode().getNodeName();//select
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
-    boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
-    boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);
-    boolean useCache = context.getBooleanAttribute("useCache", isSelect);
-    boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
+    boolean isSelect = sqlCommandType == SqlCommandType.SELECT; //ture
+    boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);//false
+    boolean useCache = context.getBooleanAttribute("useCache", isSelect); //true
+    boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);//false
 
+
+    /**
+     * 转换替换select|update等标签里面的<include />标签内容
+     *
+     * <sql id="someinclude">
+     *   from ${tableName}
+     * </sql>
+     *
+     * <select id="select" resultType="map">
+     *   select
+     *     field1, field2, field3
+     *   <include refid="someinclude">
+     *     <property name="tableName" value="user"/>
+     *   </include>
+     * </select>
+     */
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
-    includeParser.applyIncludes(context.getNode());
+    includeParser.applyIncludes(context.getNode());//select标签
 
     String parameterType = context.getStringAttribute("parameterType");
+    //如果parameterType有设置别名，需要替换
     Class<?> parameterTypeClass = resolveClass(parameterType);
 
     String lang = context.getStringAttribute("lang");
     LanguageDriver langDriver = getLanguageDriver(lang);
 
+    /**
+     * 处理selectKey标签，（selectKey设置key需要生成的值，仅insert、update有用）
+     * 参考：http://www.mybatis.org/mybatis-3/zh/sqlmap-xml.html#insert_update_and_delete
+     *
+     * <insert id="insertAuthor">
+     *   <selectKey keyProperty="id" resultType="int" order="BEFORE">
+     *     select CAST(RANDOM()*1000000 as INTEGER) a from SYSIBM.SYSDUMMY1
+     *   </selectKey>
+     *   insert into Author
+     *     (id, username, password, email,bio, favourite_section)
+     *   values
+     *     (#{id}, #{username}, #{password}, #{email}, #{bio}, #{favouriteSection,jdbcType=VARCHAR})
+     * </insert>
+     */
     // Parse selectKey after includes and remove them.
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
+
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
     KeyGenerator keyGenerator;
-    String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;
-    keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true);
+    String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX; // selectById!selectKey
+    //拼接上命名空间
+    keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true); //com.lfq.UserMapper.selectById!selectKey
+
+    /**
+     * 首先从全局配置中获取主键生成策略
+     * selectKey中设置的，看刚才的processSelectKeyNodes(id, parameterTypeClass, langDriver);语句
+     */
     if (configuration.hasKeyGenerator(keyStatementId)) {
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
+
+      //优先useGeneratedKeys，然后再判断后面的bool
       keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
           configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
-    SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
+    /**
+     * 获取对应属性值
+     */
+    SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);//select id, name, sex from user where id = ?
     StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     Integer fetchSize = context.getIntAttribute("fetchSize");
     Integer timeout = context.getIntAttribute("timeout");
@@ -107,6 +150,9 @@ public class XMLStatementBuilder extends BaseBuilder {
     String keyColumn = context.getStringAttribute("keyColumn");
     String resultSets = context.getStringAttribute("resultSets");
 
+    /**
+     * 通过mapper构造助手创建 MappedStatement
+     */
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
         fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,
         resultSetTypeEnum, flushCache, useCache, resultOrdered,
@@ -118,15 +164,21 @@ public class XMLStatementBuilder extends BaseBuilder {
     if (configuration.getDatabaseId() != null) {
       parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, configuration.getDatabaseId());
     }
+
+    //
     parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, null);
     removeSelectKeyNodes(selectKeyNodes);
   }
 
   private void parseSelectKeyNodes(String parentId, List<XNode> list, Class<?> parameterTypeClass, LanguageDriver langDriver, String skRequiredDatabaseId) {
     for (XNode nodeToHandle : list) {
+
+      //拼接
       String id = parentId + SelectKeyGenerator.SELECT_KEY_SUFFIX;
       String databaseId = nodeToHandle.getStringAttribute("databaseId");
       if (databaseIdMatchesCurrent(id, databaseId, skRequiredDatabaseId)) {
+
+        //
         parseSelectKeyNode(id, nodeToHandle, parameterTypeClass, langDriver, databaseId);
       }
     }
@@ -159,9 +211,13 @@ public class XMLStatementBuilder extends BaseBuilder {
         resultSetTypeEnum, flushCache, useCache, resultOrdered,
         keyGenerator, keyProperty, keyColumn, databaseId, langDriver, null);
 
+
+    //拼接上命名空间
     id = builderAssistant.applyCurrentNamespace(id, false);
 
     MappedStatement keyStatement = configuration.getMappedStatement(id, false);
+
+    //在这里设置了主键生成策略
     configuration.addKeyGenerator(id, new SelectKeyGenerator(keyStatement, executeBefore));
   }
 

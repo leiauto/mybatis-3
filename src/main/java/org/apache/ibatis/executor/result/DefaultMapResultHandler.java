@@ -48,7 +48,6 @@ public class DefaultMapResultHandler<K, V> implements ResultHandler<V> {
   public void handleResult(ResultContext<? extends V> context) {
     final V value = context.getResultObject();
     final MetaObject mo = MetaObject.forObject(value, objectFactory, objectWrapperFactory, reflectorFactory);
-    // TODO is that assignment always true?
     final K key = (K) mo.getValue(mapKey);
     mappedResults.put(key, value);
   }

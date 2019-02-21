@@ -52,9 +52,22 @@ import org.apache.ibatis.type.JdbcType;
  */
 public class XMLConfigBuilder extends BaseBuilder {
 
+  /**
+   * 是否已经解析过了
+   */
   private boolean parsed;
+
+  /**
+   * xml文件解析器，先生成Document，然后解析
+   */
   private final XPathParser parser;
+
+  /**
+   * 指定解析的环境
+   */
   private String environment;
+
+
   private final ReflectorFactory localReflectorFactory = new DefaultReflectorFactory();
 
   public XMLConfigBuilder(Reader reader) {
@@ -78,7 +91,8 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public XMLConfigBuilder(InputStream inputStream, String environment, Properties props) {
-    this(new XPathParser(inputStream, true, props, new XMLMapperEntityResolver()), environment, props);
+    //构建XPathParser可以进去看看（根据流生成文档）
+    this(new XPathParser(inputStream,  true, props, new XMLMapperEntityResolver()), environment, props);
   }
 
   private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
@@ -91,14 +105,28 @@ public class XMLConfigBuilder extends BaseBuilder {
   }
 
   public Configuration parse() {
+    // 已经解析过了就报错
     if (parsed) {
       throw new BuilderException("Each XMLConfigBuilder can only be used once.");
     }
+    //标识已解析
     parsed = true;
+
+
+    /**
+     * 1、解析mybatis-cfg.xml的configuration节点
+     * 2、parseConfiguration方法是对configuration节点里的所有节点内容进行加载配置
+     * （environments、typeAliases、mappers等）
+     * TODO parseConfiguration，清楚一下mybatis对一些配置的加载，如mappers
+     */
     parseConfiguration(parser.evalNode("/configuration"));
     return configuration;
   }
 
+  /**
+   * 可以对比myabtis-cfg.xml文件的每一个节点
+   * @param root
+   */
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
@@ -116,7 +144,15 @@ public class XMLConfigBuilder extends BaseBuilder {
       environmentsElement(root.evalNode("environments"));
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
       typeHandlerElement(root.evalNode("typeHandlers"));
+
+      //TODO 重点内容：解析mappers节点
+      /**
+       * <mappers>
+       *    <mapper resource="mapper/UserMapper.xml"/>
+       * </mappers>
+       */
       mapperElement(root.evalNode("mappers"));
+
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
     }
@@ -356,27 +392,59 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * 解析mappers节点。
+   *
+   * 装载mappers有4种方式
+   * 1、文件路径（mapper/UserMapper.xml）
+   * 2、包名（package）
+   * 3、类注册（com.lfq.UserMapper）
+   * 4、系统路径（D://）
+   *
+   * 看<mapper resource="mapper/UserMapper.xml"/>标签
+   *
+   * @param parent
+   * @throws Exception
+   */
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
+
+      //循环加载mapper
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) {
+          // 包扫码方式
           String mapperPackage = child.getStringAttribute("name");
           configuration.addMappers(mapperPackage);
         } else {
-          String resource = child.getStringAttribute("resource");
+          // 获取节点对应属性
+          String resource = child.getStringAttribute("resource"); //值是：mapper/UserMapper.xml
           String url = child.getStringAttribute("url");
           String mapperClass = child.getStringAttribute("class");
           if (resource != null && url == null && mapperClass == null) {
+            // resource方式，相对于类路径的资源引用
+
             ErrorContext.instance().resource(resource);
+
+            //开始读取mapper/UserMapper.xml
             InputStream inputStream = Resources.getResourceAsStream(resource);
+
+            /**
+             *  构建XMLMapperBuilder对象，里面完成了xml文件的格式校验，还有一些必要的参数初始化
+             *  此时的configuration其实已经完成了除了mappers的其他节点的初始化（environments、typeAliases等）
+             */
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+            //开始解析mapper节点
             mapperParser.parse();
+
           } else if (resource == null && url != null && mapperClass == null) {
+            //系统绝对路径的URL
             ErrorContext.instance().resource(url);
             InputStream inputStream = Resources.getUrlAsStream(url);
             XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, url, configuration.getSqlFragments());
             mapperParser.parse();
+
           } else if (resource == null && url == null && mapperClass != null) {
+            //类加载方式
             Class<?> mapperInterface = Resources.classForName(mapperClass);
             configuration.addMapper(mapperInterface);
           } else {

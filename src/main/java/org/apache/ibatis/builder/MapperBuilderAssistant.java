@@ -49,12 +49,26 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ * mapper构建助手
  * @author Clinton Begin
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
+  /**
+   * 当前mapper的命名空间（com.lfq.UserMapper）
+   *
+   * <mapper namespace="com.lfq.UserMapper"></mapper>
+   */
   private String currentNamespace;
+
+  /**
+   * mapper.xml的相对路径 （mapper/UserMapper.xml）
+   */
   private final String resource;
+
+  /**
+   * 当前对象的缓存
+   */
   private Cache currentCache;
   private boolean unresolvedCacheRef; // issue #676
 
@@ -240,6 +254,10 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return new Discriminator.Builder(configuration, resultMapping, namespaceDiscriminatorMap).build();
   }
 
+  /**
+   *  开始构建 MappedStatement
+   * @return
+   */
   public MappedStatement addMappedStatement(
       String id,
       SqlSource sqlSource,
@@ -262,18 +280,22 @@ public class MapperBuilderAssistant extends BaseBuilder {
       LanguageDriver lang,
       String resultSets) {
 
+    // 如果缓存映射未解析，报错
     if (unresolvedCacheRef) {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
-    id = applyCurrentNamespace(id, false);
+    id = applyCurrentNamespace(id, false); // com.lfq.UserMapper.selectById
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
+    /**
+     * MappedStatement.Builder是内部类。
+     */
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
-        .resource(resource)
+        .resource(resource) // mapper/UserMapper.xml
         .fetchSize(fetchSize)
         .timeout(timeout)
-        .statementType(statementType)
+        .statementType(statementType) // PREPARED
         .keyGenerator(keyGenerator)
         .keyProperty(keyProperty)
         .keyColumn(keyColumn)
@@ -292,7 +314,10 @@ public class MapperBuilderAssistant extends BaseBuilder {
       statementBuilder.parameterMap(statementParameterMap);
     }
 
+    //TODO
     MappedStatement statement = statementBuilder.build();
+
+    // 存储到configuration的mappedStatements中
     configuration.addMappedStatement(statement);
     return statement;
   }

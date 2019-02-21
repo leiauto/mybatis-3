@@ -133,6 +133,9 @@ public class Configuration {
   protected boolean lazyLoadingEnabled = false;
   protected ProxyFactory proxyFactory = new JavassistProxyFactory(); // #224 Using internal Javassist instead of OGNL
 
+  /**
+   * 数据库标识id
+   */
   protected String databaseId;
   /**
    * Configuration factory class.

@@ -153,7 +153,6 @@ public class ResultLoaderMap {
       if (metaResultObject != null && metaResultObject.getOriginalObject() instanceof Serializable) {
         final Object mappedStatementParameter = resultLoader.parameterObject;
 
-        /* @todo May the parameter be null? */
         if (mappedStatementParameter instanceof Serializable) {
           this.mappedStatement = resultLoader.mappedStatement.getId();
           this.mappedParameter = (Serializable) mappedStatementParameter;

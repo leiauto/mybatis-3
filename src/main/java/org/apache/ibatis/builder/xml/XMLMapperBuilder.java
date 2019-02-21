@@ -55,6 +55,10 @@ import org.apache.ibatis.type.TypeHandler;
 public class XMLMapperBuilder extends BaseBuilder {
 
   private final XPathParser parser;
+
+  /**
+   * mapper构造助手
+   */
   private final MapperBuilderAssistant builderAssistant;
   private final Map<String, XNode> sqlFragments;
   private final String resource;
@@ -76,26 +80,51 @@ public class XMLMapperBuilder extends BaseBuilder {
     this.builderAssistant.setCurrentNamespace(namespace);
   }
 
+  /**
+   *
+   * @param inputStream mapper/UserMapper.xml的流
+   * @param configuration 已经初始化好的mybatis的配置信息
+   * @param resource mapper节点对应属性（mapper/UserMapper.xml）
+   * @param sqlFragments
+   */
   public XMLMapperBuilder(InputStream inputStream, Configuration configuration, String resource, Map<String, XNode> sqlFragments) {
+
+    // 构建XPathParser完成了输入流初始化成文档Document的过程（org.w3c.dom.Document）
+    //
     this(new XPathParser(inputStream, true, configuration.getVariables(), new XMLMapperEntityResolver()),
         configuration, resource, sqlFragments);
   }
 
   private XMLMapperBuilder(XPathParser parser, Configuration configuration, String resource, Map<String, XNode> sqlFragments) {
     super(configuration);
+
+    //初始化mapper构建助手，很关键的一个类
     this.builderAssistant = new MapperBuilderAssistant(configuration, resource);
     this.parser = parser;
     this.sqlFragments = sqlFragments;
     this.resource = resource;
   }
 
+  /**
+   * TODO 重点内容：解析mapper节点
+   */
   public void parse() {
+    //先判断是否已经装载过了
     if (!configuration.isResourceLoaded(resource)) {
-      configurationElement(parser.evalNode("/mapper"));
+      //装配mapper节点信息，然后把该mapper节点的信息都配置到MapperBuilderAssistant（mapper构造助手）中
+      configurationElement(parser.evalNode("/mapper")); //<mapper namespace="com.lfq.UserMapper"></mapper>节点信息
+      //把该节点标记成已加载完成
       configuration.addLoadedResource(resource);
+
+
+      //绑定mapper的类，并通过反射生成对象，并保存到configuration的mapperRegistry对象的knownMappers中
+      // knownMappers.put(type, new MapperProxyFactory<>(type))，这个type就是反射生成的对象
       bindMapperForNamespace();
     }
 
+    /**
+     * 解析待定的resultMaps、cache-refs、statements
+     */
     parsePendingResultMaps();
     parsePendingCacheRefs();
     parsePendingStatements();
@@ -105,19 +134,47 @@ public class XMLMapperBuilder extends BaseBuilder {
     return sqlFragments.get(refid);
   }
 
+  /**
+   * 关于mapper的所有属性可以看官方文档：http://www.mybatis.org/mybatis-3/zh/sqlmap-xml.html
+   *
+   * cache – 给定命名空间的缓存配置。
+   * cache-ref – 其他命名空间缓存配置的引用。
+   * resultMap – 是最复杂也是最强大的元素，用来描述如何从数据库结果集中来加载对象。
+   * parameterMap – 已废弃！老式风格的参数映射。内联参数是首选,这个元素可能在将来被移除，这里不会记录。
+   * sql – 可被其他语句引用的可重用语句块。
+   * insert – 映射插入语句
+   * update – 映射更新语句
+   * delete – 映射删除语句
+   * select – 映射查询语句
+   *
+   * @param context
+   */
   private void configurationElement(XNode context) {
     try {
-      String namespace = context.getStringAttribute("namespace");
+
+      //得到<mapper namespace="com.lfq.UserMapper">里的命名空间
+      String namespace = context.getStringAttribute("namespace"); //com.lfq.UserMapper
       if (namespace == null || namespace.equals("")) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
       builderAssistant.setCurrentNamespace(namespace);
+
+
+      // -------begin------暂时不看这部分---------
       cacheRefElement(context.evalNode("cache-ref"));
       cacheElement(context.evalNode("cache"));
+      //parameterMap节点解析
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      //resultMap节点解析
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      //sql节点解析
       sqlElement(context.evalNodes("/mapper/sql"));
+      // ------end-------暂时不看这部分---------
+
+
+      // TODO 重点内容：select|insert|update|delete节点解析
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
+
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
     }
@@ -127,13 +184,23 @@ public class XMLMapperBuilder extends BaseBuilder {
     if (configuration.getDatabaseId() != null) {
       buildStatementFromContext(list, configuration.getDatabaseId());
     }
+
+    //开始创建语句
     buildStatementFromContext(list, null);
   }
 
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
+
+    /**
+     * list：所有的select|insert|update|delete节点
+     *
+     * builderAssistant助手里面有命名空间、缓存、参数集、返回结果类型等参数信息
+     */
     for (XNode context : list) {
+      //简单构建方法创建XMLStatementBuilder对象
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
+        //开始解析
         statementParser.parseStatementNode();
       } catch (IncompleteElementException e) {
         configuration.addIncompleteStatement(statementParser);
@@ -423,11 +490,15 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
   }
 
+  /**
+   * TODO 重点内容：（设计反射、代理）
+   */
   private void bindMapperForNamespace() {
     String namespace = builderAssistant.getCurrentNamespace();
     if (namespace != null) {
       Class<?> boundType = null;
       try {
+        //反射生成namespace的对象
         boundType = Resources.classForName(namespace);
       } catch (ClassNotFoundException e) {
         //ignore, bound type is not required
@@ -437,7 +508,7 @@ public class XMLMapperBuilder extends BaseBuilder {
           // Spring may not know the real resource name so we set a flag
           // to prevent loading again this resource from the mapper interface
           // look at MapperAnnotationBuilder#loadXmlResource
-          configuration.addLoadedResource("namespace:" + namespace);
+          configuration.addLoadedResource("namespace:" + namespace);// namespace:com.lfq.UserMapper
           configuration.addMapper(boundType);
         }
       }

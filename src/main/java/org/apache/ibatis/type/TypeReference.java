@@ -46,7 +46,6 @@ public abstract class TypeReference<T> {
     }
 
     Type rawType = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
-    // TODO remove this when Reflector is fixed to return Types
     if (rawType instanceof ParameterizedType) {
       rawType = ((ParameterizedType) rawType).getRawType();
     }

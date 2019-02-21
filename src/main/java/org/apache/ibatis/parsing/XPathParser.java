@@ -40,13 +40,27 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
+ * xml解析器
+ * 使用的是javax包下的解析器，得到org.w3c.dom下的文档对象Document
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class XPathParser {
 
+  /**
+   * 读取xml得到的文档
+   */
   private final Document document;
+
+  /**
+   * xml的格式校验
+   */
   private boolean validation;
+
+  /**
+   * xml校验、解析器
+   */
   private EntityResolver entityResolver;
   private Properties variables;
   private XPath xpath;
@@ -121,8 +135,17 @@ public class XPathParser {
     this.document = createDocument(new InputSource(reader));
   }
 
+  /**
+   *
+   * @param inputStream
+   * @param validation
+   * @param variables
+   * @param entityResolver
+   */
   public XPathParser(InputStream inputStream, boolean validation, Properties variables, EntityResolver entityResolver) {
+    //设置一些参数到当前属性
     commonConstructor(validation, variables, entityResolver);
+    //创建xml文档（mybatis-cfg.xml文档）
     this.document = createDocument(new InputSource(inputStream));
   }
 
@@ -226,11 +249,18 @@ public class XPathParser {
     }
   }
 
+  /**
+   * 创建xml对应文档
+   *
+   * 使用的是jdk自带的xml解析方式
+   * @param inputSource
+   * @return
+   */
   private Document createDocument(InputSource inputSource) {
     // important: this must only be called AFTER common constructor
     try {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      factory.setValidating(validation);
+      factory.setValidating(validation); //是否校验xml
 
       factory.setNamespaceAware(false);
       factory.setIgnoringComments(true);
@@ -238,6 +268,7 @@ public class XPathParser {
       factory.setCoalescing(false);
       factory.setExpandEntityReferences(true);
 
+      // 构建DocumentBuilder，用于创建文档，同时把文档的信息初始化，包括是否校验文档等。。
       DocumentBuilder builder = factory.newDocumentBuilder();
       builder.setEntityResolver(entityResolver);
       builder.setErrorHandler(new ErrorHandler() {
@@ -255,6 +286,8 @@ public class XPathParser {
         public void warning(SAXParseException exception) throws SAXException {
         }
       });
+
+      //解析xml文档
       return builder.parse(inputSource);
     } catch (Exception e) {
       throw new BuilderException("Error creating document instance.  Cause: " + e, e);
