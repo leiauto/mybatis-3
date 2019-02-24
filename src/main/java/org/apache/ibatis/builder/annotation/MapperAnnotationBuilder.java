@@ -126,23 +126,41 @@ public class MapperAnnotationBuilder {
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
+
+      //重新判断一下是否已经加载过mapper的xml文件，如果没就解析
       loadXmlResource();
+
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
+
       parseCache();
       parseCacheRef();
+
       Method[] methods = type.getMethods();
       for (Method method : methods) {
         try {
           // issue #237
           if (!method.isBridge()) {
+
+            /**
+             * 注解形式的加载解析、类似于xml形式的生成过程，构建MappedStatement放到Configruation中
+             *
+             * 最后的结果是：configuration.addMappedStatement(statement);
+             */
             parseStatement(method);
           }
         } catch (IncompleteElementException e) {
+          // 1、解析报错，把方法放到incompleteMethods中，下面继续解析
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+
+    /**
+     * 2、上面解析报错走这里继续解析~
+     *
+     * 解析待定的方法，incompleteMethods里面的
+     */
     parsePendingMethods();
   }
 
@@ -165,6 +183,9 @@ public class MapperAnnotationBuilder {
     // Spring may not know the real resource name so we check a flag
     // to prevent loading again a resource twice
     // this flag is set at XMLMapperBuilder#bindMapperForNamespace
+    /**
+     * 判断是否已经加载过mapper.xml，加载过会跳过（跳过）
+     */
     if (!configuration.isResourceLoaded("namespace:" + type.getName())) {
       String xmlResource = type.getName().replace('.', '/') + ".xml";
       // #1347
@@ -294,9 +315,18 @@ public class MapperAnnotationBuilder {
     return null;
   }
 
+  /**
+   * 解析方法上的sql注解
+   *
+   * @param method
+   */
   void parseStatement(Method method) {
     Class<?> parameterTypeClass = getParameterType(method);
     LanguageDriver languageDriver = getLanguageDriver(method);
+
+    /**
+     * 获取方法上的注解，比如@select、@insert
+     */
     SqlSource sqlSource = getSqlSourceFromAnnotations(method, parameterTypeClass, languageDriver);
     if (sqlSource != null) {
       Options options = method.getAnnotation(Options.class);

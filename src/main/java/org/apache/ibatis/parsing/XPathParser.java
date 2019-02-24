@@ -270,7 +270,7 @@ public class XPathParser {
 
       // 构建DocumentBuilder，用于创建文档，同时把文档的信息初始化，包括是否校验文档等。。
       DocumentBuilder builder = factory.newDocumentBuilder();
-      builder.setEntityResolver(entityResolver);
+      builder.setEntityResolver(entityResolver);//解析器
       builder.setErrorHandler(new ErrorHandler() {
         @Override
         public void error(SAXParseException exception) throws SAXException {

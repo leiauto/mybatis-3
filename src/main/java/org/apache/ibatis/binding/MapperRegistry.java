@@ -40,13 +40,27 @@ public class MapperRegistry {
     this.config = config;
   }
 
+  /**
+   * 获取
+   * @param type
+   * @param sqlSession
+   * @param <T>
+   * @return
+   */
   @SuppressWarnings("unchecked")
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+
+    //获取mapper代理工厂
     final MapperProxyFactory<T> mapperProxyFactory = (MapperProxyFactory<T>) knownMappers.get(type);
     if (mapperProxyFactory == null) {
       throw new BindingException("Type " + type + " is not known to the MapperRegistry.");
     }
     try {
+
+      /**
+       *
+       * 最终调用Proxy.newProxyInstance生成代理对象
+       */
       return mapperProxyFactory.newInstance(sqlSession);
     } catch (Exception e) {
       throw new BindingException("Error getting mapper instance. Cause: " + e, e);
@@ -57,7 +71,11 @@ public class MapperRegistry {
     return knownMappers.containsKey(type);
   }
 
-
+  /**
+   * 添加
+   * @param type com.lfq.UserMapper
+   * @param <T>
+   */
   public <T> void addMapper(Class<T> type) {
     if (type.isInterface()) {
       if (hasMapper(type)) {
@@ -67,14 +85,19 @@ public class MapperRegistry {
       try {
 
         /**
-         * TODO 为mapper生成代理对象
+         * TODO 将mapper接口包装成mapper代理
          */
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
         // mapper parser. If the type is already known, it won't try.
+
+        //解析接口上的注解或者加载mapper配置文件生成mappedStatement（com/lfq/UserMapper.java）
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
+        // 开始解析
         parser.parse();
+
+        // 加载完成标记
         loadCompleted = true;
       } finally {
         if (!loadCompleted) {

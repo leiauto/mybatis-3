@@ -47,6 +47,8 @@ public class XMLScriptBuilder extends BaseBuilder {
     super(configuration);
     this.context = context;
     this.parameterType = parameterType;
+
+    //需要解释的标签的处理类
     initNodeHandlerMap();
   }
 
@@ -64,6 +66,9 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   public SqlSource parseScriptNode() {
+
+    //获取select/update/insert/delete节点下的Sql语句节点包装成相应的SqlNode对象
+    //每个CRUD语句可能都有多个SqlNode对象
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
     if (isDynamic) {
@@ -74,8 +79,15 @@ public class XMLScriptBuilder extends BaseBuilder {
     return sqlSource;
   }
 
+  /**
+   * 解析动态节点
+   * @param node
+   * @return
+   */
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
+
+    //获取CRUD节点下所有子节点，包括文本内容<trim>等动态sql节点
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));

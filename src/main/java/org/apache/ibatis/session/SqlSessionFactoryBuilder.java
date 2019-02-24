@@ -26,6 +26,9 @@ import org.apache.ibatis.executor.ErrorContext;
 import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 
 /**
+ *
+ * @中文注释 吕一明
+ * @公众号 码客在线
  * Builds {@link SqlSession} instances.
  *
  * @author Clinton Begin
@@ -76,8 +79,12 @@ public class SqlSessionFactoryBuilder {
    * 构建SqlSessionFactory对象 （）
    * @param inputStream 配置文件流
    * @param environment 环境变量，在配置文件中可以配置多个数据源等环境
-   * @param properties
+   * @param properties 加载那些properties（属性配置文件），那些属性可以用${propName}语法形式多次用在配置文件中
    * @return
+   *
+   * @中文注释 吕一明
+   * @公众号 码客在线
+   *
    */
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {

@@ -574,9 +574,27 @@ public class Configuration {
     return newExecutor(transaction, defaultExecutorType);
   }
 
+  /**
+   * MyBatis 的 Executor 常用的有以下几种：
+   *
+   * SimpleExecutor: 默认的 Executor，每个 SQL 执行时都会创建新的 Statement
+   * ResuseExecutor: 相同的 SQL 会复用 Statement
+   * BatchExecutor: 用于批处理的 Executor
+   * CachingExecutor: 可缓存数据的 Executor，用代理模式包装了其它类型的 Executor
+   *
+   * 默认：SimpleExecutor
+   *
+   * @param transaction
+   * @param executorType
+   * @return
+   */
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
+
+    // 如果手动设置过默认执行器类型就使用默认执行器类型（setDefaultExecutorType）
     executorType = executorType == null ? defaultExecutorType : executorType;
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
+
+
     Executor executor;
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
@@ -585,9 +603,14 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+
+    // 二级级缓存，如果开启缓存就用缓存执行器包装一层。（默认开启）
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+
+    // 拦截器链（应用插件）
+    // 作用在执行增删改查前后的拦截器
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
@@ -674,6 +697,12 @@ public class Configuration {
     return parameterMaps.containsKey(id);
   }
 
+  /**
+   * mappedStatements是个map
+   * id: com.lfq.UserMapper.selectById
+   *
+   * @param ms
+   */
   public void addMappedStatement(MappedStatement ms) {
     mappedStatements.put(ms.getId(), ms);
   }

@@ -47,6 +47,9 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.type.JdbcType;
 
 /**
+ * @中文注释 吕一明
+ * @公众号 码客在线
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -90,14 +93,25 @@ public class XMLConfigBuilder extends BaseBuilder {
     this(inputStream, environment, null);
   }
 
+  /**
+   *
+   * @param inputStream
+   * @param environment
+   * @param props
+   *
+   * XPathParser参数XMLMapperEntityResolver xml解析校验器
+   */
   public XMLConfigBuilder(InputStream inputStream, String environment, Properties props) {
     //构建XPathParser可以进去看看（根据流生成文档）
     this(new XPathParser(inputStream,  true, props, new XMLMapperEntityResolver()), environment, props);
   }
 
   private XMLConfigBuilder(XPathParser parser, String environment, Properties props) {
+
+    //这里初始化configruation对象
     super(new Configuration());
     ErrorContext.instance().resource("SQL Mapper Configuration");
+    //变量
     this.configuration.setVariables(props);
     this.parsed = false;
     this.environment = environment;
@@ -129,6 +143,8 @@ public class XMLConfigBuilder extends BaseBuilder {
    */
   private void parseConfiguration(XNode root) {
     try {
+
+      //---------start-----后面有兴趣看---------------------
       //issue #117 read properties first
       propertiesElement(root.evalNode("properties"));
       Properties settings = settingsAsProperties(root.evalNode("settings"));
@@ -140,10 +156,14 @@ public class XMLConfigBuilder extends BaseBuilder {
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
       settingsElement(settings);
-      // read it after objectFactory and objectWrapperFactory issue #631
+      //获取事务、数据源工厂
       environmentsElement(root.evalNode("environments"));
+
+      //databaseId的来源
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
       typeHandlerElement(root.evalNode("typeHandlers"));
+      //----------end----后面有兴趣看---------------------
+
 
       //TODO 重点内容：解析mappers节点
       /**
@@ -304,6 +324,12 @@ public class XMLConfigBuilder extends BaseBuilder {
     configuration.setConfigurationFactory(resolveClass(props.getProperty("configurationFactory")));
   }
 
+  /**
+   * 返回看这里 {@link org.apache.ibatis.builder.xml.XMLConfigBuilder#parseConfiguration(org.apache.ibatis.parsing.XNode) }
+   *
+   * @param context
+   * @throws Exception
+   */
   private void environmentsElement(XNode context) throws Exception {
     if (context != null) {
       if (environment == null) {
@@ -312,8 +338,13 @@ public class XMLConfigBuilder extends BaseBuilder {
       for (XNode child : context.getChildren()) {
         String id = child.getStringAttribute("id");
         if (isSpecifiedEnvironment(id)) {
+
+          /**
+           * 获取事务类型，数据源
+           */
           TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
           DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
+
           DataSource dataSource = dsFactory.getDataSource();
           Environment.Builder environmentBuilder = new Environment.Builder(id)
               .transactionFactory(txFactory)

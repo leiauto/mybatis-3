@@ -43,6 +43,15 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     this.methodCache = methodCache;
   }
 
+  /**
+   * 代理最终调用的方法
+   *
+   * @param proxy
+   * @param method
+   * @param args
+   * @return
+   * @throws Throwable
+   */
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
@@ -54,7 +63,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
     }
+    //尝试从缓存中获取，也就是看到的methodCache
     final MapperMethod mapperMethod = cachedMapperMethod(method);
+
+    //通过MapperMethod对象调用方法
     return mapperMethod.execute(sqlSession, args);
   }
 

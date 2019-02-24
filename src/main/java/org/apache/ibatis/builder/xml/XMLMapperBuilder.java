@@ -81,7 +81,7 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   /**
-   *
+   * 类似于加载全局配置xml
    * @param inputStream mapper/UserMapper.xml的流
    * @param configuration 已经初始化好的mybatis的配置信息
    * @param resource mapper节点对应属性（mapper/UserMapper.xml）
@@ -109,15 +109,16 @@ public class XMLMapperBuilder extends BaseBuilder {
    * TODO 重点内容：解析mapper节点
    */
   public void parse() {
-    //先判断是否已经装载过了
+    // 先判断是否已经装载过了
     if (!configuration.isResourceLoaded(resource)) {
-      //装配mapper节点信息，然后把该mapper节点的信息都配置到MapperBuilderAssistant（mapper构造助手）中
+      // 装配mapper节点信息，然后把该mapper节点的信息都配置到MapperBuilderAssistant（mapper构造助手）中
+      // 结果是：configuration.addMappedStatement(statement);
       configurationElement(parser.evalNode("/mapper")); //<mapper namespace="com.lfq.UserMapper"></mapper>节点信息
-      //把该节点标记成已加载完成
+      // 把该节点标记成已加载完成
       configuration.addLoadedResource(resource);
 
 
-      //绑定mapper的类，并通过反射生成对象，并保存到configuration的mapperRegistry对象的knownMappers中
+      // 绑定mapper的类，并通过反射生成对象，并保存到configuration的mapperRegistry对象的knownMappers中
       // knownMappers.put(type, new MapperProxyFactory<>(type))，这个type就是反射生成的对象
       bindMapperForNamespace();
     }

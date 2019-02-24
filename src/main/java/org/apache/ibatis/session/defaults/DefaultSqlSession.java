@@ -48,10 +48,25 @@ import org.apache.ibatis.session.SqlSession;
 public class DefaultSqlSession implements SqlSession {
 
   private final Configuration configuration;
+
+  /**
+   * 执行器
+   */
   private final Executor executor;
 
+  /**
+   * 是否自动提交事务
+   */
   private final boolean autoCommit;
+
+  /**
+   * 是否脏数据，当数据变更时为true，提交后为fasle。默认false
+   */
   private boolean dirty;
+
+  /**
+   * //游标列表
+   */
   private List<Cursor<?>> cursorList;
 
   public DefaultSqlSession(Configuration configuration, Executor executor, boolean autoCommit) {
@@ -286,6 +301,16 @@ public class DefaultSqlSession implements SqlSession {
     return configuration;
   }
 
+  /**
+   * 从configuration获取mapper，具体是mapperRegistry
+   *
+   * @param type Mapper interface class
+   * @param <T>
+   * @return
+   *
+   * @中文注释 吕一明
+   * @公众号 码客在线
+   */
   @Override
   public <T> T getMapper(Class<T> type) {
     return configuration.getMapper(type, this);

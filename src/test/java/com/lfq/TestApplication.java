@@ -6,6 +6,7 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.apache.ibatis.session.defaults.DefaultSqlSession;
 import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,9 @@ import java.io.InputStream;
 
 /**
  * 预备知识：动态代理
+ *
+ * @中文注释 吕一明
+ * @公众号 码客在线
  */
 public class TestApplication {
 
@@ -33,7 +37,19 @@ public class TestApplication {
          */
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
 
+
+        /**
+         * 代表和数据库的一次会话，向用户提供了操作数据库的方法。
+         * 但和数据库操作有关的职责都会委托给Executor
+         *
+         * 默认实现 {@link org.apache.ibatis.session.defaults.DefaultSqlSessionFactory.openSession()}
+         */
         SqlSession sqlSession = sqlSessionFactory.openSession();
+
+        /**
+         *
+         * 默认实现 {@link DefaultSqlSession#getMapper(java.lang.Class)}
+         */
         UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
 
         User user = userMapper.selectById(1L);

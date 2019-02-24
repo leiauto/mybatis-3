@@ -62,6 +62,8 @@ public final class MappedStatement {
   }
 
   public static class Builder {
+
+    //初始化新建一个mappedStatement，最后build（）返回
     private MappedStatement mappedStatement = new MappedStatement();
 
     public Builder(Configuration configuration, String id, SqlSource sqlSource, SqlCommandType sqlCommandType) {

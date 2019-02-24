@@ -255,7 +255,31 @@ public class MapperBuilderAssistant extends BaseBuilder {
   }
 
   /**
-   *  开始构建 MappedStatement
+   * 构建一个MappedStatement
+   *
+   * 使用Configuration的getMappedStatement方法来获取MappedStatement对象
+   * 获取的方式key的组成为（命名空间+id）
+   *
+   * @param id
+   * @param sqlSource 负责根据用户传递的parameterObject，动态地生成SQL语句，将信息封装到BoundSql对象中，并返回。（sql、parameterMappings）
+   * @param statementType
+   * @param sqlCommandType
+   * @param fetchSize
+   * @param timeout
+   * @param parameterMap
+   * @param parameterType
+   * @param resultMap
+   * @param resultType
+   * @param resultSetType
+   * @param flushCache
+   * @param useCache
+   * @param resultOrdered
+   * @param keyGenerator
+   * @param keyProperty
+   * @param keyColumn
+   * @param databaseId
+   * @param lang
+   * @param resultSets
    * @return
    */
   public MappedStatement addMappedStatement(
@@ -285,7 +309,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
+    //为id加上namespace前缀
     id = applyCurrentNamespace(id, false); // com.lfq.UserMapper.selectById
+    //是否是select语句
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
     /**
@@ -303,18 +329,37 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .lang(lang)
         .resultOrdered(resultOrdered)
         .resultSets(resultSets)
-        .resultMaps(getStatementResultMaps(resultMap, resultType, id))
+        .resultMaps(getStatementResultMaps(resultMap, resultType, id)) //获取resultMap集合
         .resultSetType(resultSetType)
         .flushCacheRequired(valueOrDefault(flushCache, !isSelect))
         .useCache(valueOrDefault(useCache, isSelect))
         .cache(currentCache);
 
+    /**
+     * 引用外部parameterMap、参数映射
+     * <select
+     *   id="selectPerson"
+     *   parameterType="int"
+     *   parameterMap="parameterMapName"
+     * />
+     *
+     * <parameterMap id=”parameterMapName”   [class=”com.domain.Product”]>
+     *         <parameter property =”propertyName”
+     *                 [jdbcType=”VARCHAR”]
+     *                 [javaType=”string”]
+     *                 [nullValue=”NUMERIC”]
+     *                 [null=”-9999999”]
+     *         />
+     *        <parameter…… />
+     *        <parameter …… />
+     * </parameterMap>
+     */
     ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
     if (statementParameterMap != null) {
       statementBuilder.parameterMap(statementParameterMap);
     }
 
-    //TODO
+    //TODO 构建生成MappedStatement
     MappedStatement statement = statementBuilder.build();
 
     // 存储到configuration的mappedStatements中

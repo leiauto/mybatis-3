@@ -28,6 +28,8 @@ import org.xml.sax.SAXException;
  * mapper.xml解析器
  * 解析、校验格式
  *
+ * @中文注释 吕一明
+ * @公众号 码客在线
  * Offline entity resolver for the MyBatis DTDs.
  *
  * @author Clinton Begin
@@ -69,6 +71,9 @@ public class XMLMapperEntityResolver implements EntityResolver {
     }
   }
 
+  /**
+   * SAX 解析器将使用 InputSource 对象来确定如何读取 XML 输入
+  */
   private InputSource getInputSource(String path, String publicId, String systemId) {
     InputSource source = null;
     if (path != null) {

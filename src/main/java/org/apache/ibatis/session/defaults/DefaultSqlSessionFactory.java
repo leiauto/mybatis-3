@@ -29,10 +29,15 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.ibatis.transaction.Transaction;
 import org.apache.ibatis.transaction.TransactionFactory;
+import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
+import org.apache.ibatis.builder.xml.XMLConfigBuilder;
 
 /**
  * @author Clinton Begin
+ *
+ * @中文注释 吕一明
+ * @公众号 码客在线
  */
 public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
@@ -87,12 +92,37 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     return configuration;
   }
 
+  /**
+   * 根据设定Session的SQL执行器的类型、事务类型和是否自动提交获取sqlSession
+   *
+   * @param execType SIMPLE, REUSE, BATCH {@link ExecutorType}，默认simple
+   * @param level 数据库事务隔离级别 null
+   * @param autoCommit 是否自动提交
+   * @return
+   *
+   * @中文注释 吕一明
+   * @公众号 码客在线
+   */
   private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
     Transaction tx = null;
     try {
+      //环境
       final Environment environment = configuration.getEnvironment();
+
+      /**
+       * 通过环境获取到事务工厂
+       * 在解析全局配置的environments节点配置的 {@link XMLConfigBuilder#parseConfiguration(org.apache.ibatis.parsing.XNode)}
+       *
+       * JDBC实现{@link JdbcTransactionFactory}
+       */
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
+
+      //创建事务对象
       tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
+
+      /**
+       * Executor 是什么呢？它其实是一个执行器，SqlSession 的操作会交给 Executor 去执行
+       */
       final Executor executor = configuration.newExecutor(tx, execType);
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {

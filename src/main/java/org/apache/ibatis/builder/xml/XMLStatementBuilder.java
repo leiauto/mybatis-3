@@ -53,6 +53,9 @@ public class XMLStatementBuilder extends BaseBuilder {
     this.requiredDatabaseId = databaseId;
   }
 
+  /**
+   * 解析select|insert|update|delete节点
+   */
   public void parseStatementNode() {
     String id = context.getStringAttribute("id");//selectById
     String databaseId = context.getStringAttribute("databaseId");
@@ -62,7 +65,8 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
 
     String nodeName = context.getNode().getNodeName();//select
-    SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
+    SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));//转换string为枚举
+
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT; //ture
     boolean flushCache = context.getBooleanAttribute("flushCache", !isSelect);//false
     boolean useCache = context.getBooleanAttribute("useCache", isSelect); //true
@@ -70,6 +74,8 @@ public class XMLStatementBuilder extends BaseBuilder {
 
 
     /**
+     * 1.解析之前先解析<include>SQL片段，拼装到当前的sql中
+     *
      * 转换替换select|update等标签里面的<include />标签内容
      *
      * <sql id="someinclude">
@@ -88,6 +94,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
     includeParser.applyIncludes(context.getNode());//select标签
 
+
     String parameterType = context.getStringAttribute("parameterType");
     //如果parameterType有设置别名，需要替换
     Class<?> parameterTypeClass = resolveClass(parameterType);
@@ -96,6 +103,8 @@ public class XMLStatementBuilder extends BaseBuilder {
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     /**
+     * 2.解析之前先解析<selectKey>
+     *
      * 处理selectKey标签，（selectKey设置key需要生成的值，仅insert、update有用）
      * 参考：http://www.mybatis.org/mybatis-3/zh/sqlmap-xml.html#insert_update_and_delete
      *
@@ -113,6 +122,9 @@ public class XMLStatementBuilder extends BaseBuilder {
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
 
+    /**
+     * 3.主键生成器赋值
+     */
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
     KeyGenerator keyGenerator;
     String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX; // selectById!selectKey
@@ -124,23 +136,29 @@ public class XMLStatementBuilder extends BaseBuilder {
      * selectKey中设置的，看刚才的processSelectKeyNodes(id, parameterTypeClass, langDriver);语句
      */
     if (configuration.hasKeyGenerator(keyStatementId)) {
+      //如果已存在改keyStatementId的主键生成器，则直接复制
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
 
-      //优先useGeneratedKeys，然后再判断后面的bool
+      // 如果属性值没有useGeneratedKeys，就根据isUseGeneratedKeys配置和是否是插入语句决定，
+      // insert插入之后返回id，就是这个useGeneratedKeys=true设置
+      // 优先useGeneratedKeys，然后再判断后面的bool
       keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
           configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
           ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
     }
 
     /**
-     * 获取对应属性值
+     * 4.解析sql包装为SqlSourc。
+     * Mybatis默认XML驱动类为XMLLanguageDriver，其主要作用于解析select|update|insert|delete节点为完整的SQL语句。
      */
     SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);//select id, name, sex from user where id = ?
+
+
     StatementType statementType = StatementType.valueOf(context.getStringAttribute("statementType", StatementType.PREPARED.toString()));
     Integer fetchSize = context.getIntAttribute("fetchSize");
     Integer timeout = context.getIntAttribute("timeout");
-    String parameterMap = context.getStringAttribute("parameterMap");
+    String parameterMap = context.getStringAttribute("parameterMap"); //引用外部 parameterMap
     String resultType = context.getStringAttribute("resultType");
     Class<?> resultTypeClass = resolveClass(resultType);
     String resultMap = context.getStringAttribute("resultMap");
@@ -151,7 +169,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     String resultSets = context.getStringAttribute("resultSets");
 
     /**
-     * 通过mapper构造助手创建 MappedStatement
+     * 5.去调助手类，这里构建一个MappedStatement存入configuration
      */
     builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
         fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,

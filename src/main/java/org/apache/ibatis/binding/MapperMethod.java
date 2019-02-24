@@ -54,6 +54,15 @@ public class MapperMethod {
     this.method = new MethodSignature(config, mapperInterface, method);
   }
 
+  /**
+   * TODO 反射调用的方法
+   *
+   * @param sqlSession
+   * @param args
+   * @return
+   *
+   * 返回上一层 {@link MapperProxy#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])}
+   */
   public Object execute(SqlSession sqlSession, Object[] args) {
     Object result;
     switch (command.getType()) {
