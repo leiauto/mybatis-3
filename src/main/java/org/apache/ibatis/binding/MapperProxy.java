@@ -55,22 +55,36 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
+      // 如果是 Object 定义的方法，直接调用
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
+
+      // 见 https://github.com/mybatis/mybatis-3/issues/709 ，支持 JDK8 default 方法
       } else if (isDefaultMethod(method)) {
         return invokeDefaultMethod(proxy, method, args);
       }
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
     }
-    //尝试从缓存中获取，也就是看到的methodCache
+    //尝试从缓存methodCache中获取，没有就新建一个并缓存起来
     final MapperMethod mapperMethod = cachedMapperMethod(method);
 
-    //通过MapperMethod对象调用方法
+    //真正的处理在这里，通过MapperMethod对象调用方法
     return mapperMethod.execute(sqlSession, args);
   }
 
   private MapperMethod cachedMapperMethod(Method method) {
+
+    /**
+     *
+     * 相当于
+     * MapperMethod mapperMethod = methodCache.get(method);
+     * if (mapperMethod == null) {
+     *     mapperMethod = new MapperMethod(...);
+     *     methodCache.put(method, mapperMethod);
+     * }
+     *
+     */
     return methodCache.computeIfAbsent(method, k -> new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
   }
 

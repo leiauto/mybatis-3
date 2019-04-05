@@ -119,7 +119,7 @@ public class XMLMapperBuilder extends BaseBuilder {
 
 
       // 绑定mapper的类，并通过反射生成对象，并保存到configuration的mapperRegistry对象的knownMappers中
-      // knownMappers.put(type, new MapperProxyFactory<>(type))，这个type就是反射生成的对象
+      // knownMappers.put(type, new MapperProxyFactory<>(type))，这个type就是代理工厂
       bindMapperForNamespace();
     }
 
@@ -182,6 +182,7 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void buildStatementFromContext(List<XNode> list) {
+
     if (configuration.getDatabaseId() != null) {
       buildStatementFromContext(list, configuration.getDatabaseId());
     }
@@ -499,7 +500,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     if (namespace != null) {
       Class<?> boundType = null;
       try {
-        //反射生成namespace的对象
+        //生成namespace的对象
         boundType = Resources.classForName(namespace);
       } catch (ClassNotFoundException e) {
         //ignore, bound type is not required

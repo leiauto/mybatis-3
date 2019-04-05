@@ -72,7 +72,7 @@ public class MapperRegistry {
   }
 
   /**
-   * 添加
+   * 添加mapper接口，并生成对应代理工厂
    * @param type com.lfq.UserMapper
    * @param <T>
    */
@@ -85,14 +85,16 @@ public class MapperRegistry {
       try {
 
         /**
-         * TODO 将mapper接口包装成mapper代理
+         * 生成代理工厂对象
+         * key: 接口对象
+         * value：代理工厂
          */
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
         // mapper parser. If the type is already known, it won't try.
 
-        //解析接口上的注解或者加载mapper配置文件生成mappedStatement（com/lfq/UserMapper.java）
+        //（跳过）解析接口上的注解或者加载mapper配置文件生成mappedStatement（com/lfq/UserMapper.java）
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
         // 开始解析
         parser.parse();

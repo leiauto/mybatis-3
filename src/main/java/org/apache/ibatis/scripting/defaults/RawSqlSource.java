@@ -40,6 +40,12 @@ public class RawSqlSource implements SqlSource {
     this(configuration, getSql(configuration, rootSqlNode), parameterType);
   }
 
+  /**
+   * 这里面参数#{id}转换成？
+   * @param configuration
+   * @param sql
+   * @param parameterType
+   */
   public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> clazz = parameterType == null ? Object.class : parameterType;
@@ -48,7 +54,9 @@ public class RawSqlSource implements SqlSource {
 
   private static String getSql(Configuration configuration, SqlNode rootSqlNode) {
     DynamicContext context = new DynamicContext(configuration, null);
+    // 解析出 SqlSource 对象
     rootSqlNode.apply(context);
+    // 获得 sql
     return context.getSql();
   }
 

@@ -604,7 +604,7 @@ public class Configuration {
       executor = new SimpleExecutor(this, transaction);
     }
 
-    // 二级级缓存，如果开启缓存就用缓存执行器包装一层。（默认开启）
+    // 一级级缓存，如果开启缓存就用缓存执行器包装一层。（默认开启）
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }

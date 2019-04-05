@@ -25,8 +25,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * mapper.xml解析器
- * 解析、校验格式
+ * 通过key查找dtd文件
  *
  * @中文注释 吕一明
  * @公众号 码客在线

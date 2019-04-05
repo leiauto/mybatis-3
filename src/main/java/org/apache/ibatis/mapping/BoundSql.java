@@ -24,6 +24,9 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 动态生成的SQL语句以及相应的参数信息
+ * 可执行的封装
+ *
  * An actual SQL String got from an {@link SqlSource} after having processed any dynamic content.
  * The SQL may have SQL placeholders "?" and an list (ordered) of an parameter mappings
  * with the additional information for each parameter (at least the property name of the input object to read
@@ -35,7 +38,14 @@ import org.apache.ibatis.session.Configuration;
  */
 public class BoundSql {
 
+  /**
+   * SQL 语句
+   */
   private final String sql;
+
+  /**
+   * 参数映射集合
+   */
   private final List<ParameterMapping> parameterMappings;
   private final Object parameterObject;
   private final Map<String, Object> additionalParameters;

@@ -92,7 +92,7 @@ public class XMLStatementBuilder extends BaseBuilder {
      */
     // Include Fragments before parsing
     XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
-    includeParser.applyIncludes(context.getNode());//select标签
+    includeParser.applyIncludes(context.getNode());
 
 
     String parameterType = context.getStringAttribute("parameterType");
@@ -136,7 +136,7 @@ public class XMLStatementBuilder extends BaseBuilder {
      * selectKey中设置的，看刚才的processSelectKeyNodes(id, parameterTypeClass, langDriver);语句
      */
     if (configuration.hasKeyGenerator(keyStatementId)) {
-      //如果已存在改keyStatementId的主键生成器，则直接复制
+      //如果已存在该keyStatementId的主键生成器，则直接复制
       keyGenerator = configuration.getKeyGenerator(keyStatementId);
     } else {
 

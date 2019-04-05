@@ -39,6 +39,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 /**
+ * Mapper 方法。在 Mapper 接口中，每个定义的方法，对应一个 MapperMethod 对象
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -46,7 +48,14 @@ import org.apache.ibatis.session.SqlSession;
  */
 public class MapperMethod {
 
+  /**
+   * SQL命令，判断sql类型
+   */
   private final SqlCommand command;
+
+  /**
+   * 方法签名
+   */
   private final MethodSignature method;
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
@@ -92,8 +101,11 @@ public class MapperMethod {
         } else if (method.returnsCursor()) {
           result = executeForCursor(sqlSession, args);
         } else {
+
+          // 转换参数
           Object param = method.convertArgsToSqlCommandParam(args);
           result = sqlSession.selectOne(command.getName(), param);
+
           if (method.returnsOptional()
               && (result == null || !method.getReturnType().equals(result.getClass()))) {
             result = Optional.ofNullable(result);
@@ -106,6 +118,8 @@ public class MapperMethod {
       default:
         throw new BindingException("Unknown execution method for: " + command.getName());
     }
+
+    // 返回结果为 null ，并且返回类型为基本类型，则抛出 BindingException 异常
     if (result == null && method.getReturnType().isPrimitive() && !method.returnsVoid()) {
       throw new BindingException("Mapper method '" + command.getName()
           + " attempted to return null from a method with a primitive return type (" + method.getReturnType() + ").");
@@ -281,13 +295,27 @@ public class MapperMethod {
     }
   }
 
+  /**
+   * 方法签名
+   */
   public static class MethodSignature {
 
+    /**
+     * 返回类型是否为集合
+     */
     private final boolean returnsMany;
+
+    /**
+     * 返回类型是否为 Map
+     */
     private final boolean returnsMap;
     private final boolean returnsVoid;
     private final boolean returnsCursor;
     private final boolean returnsOptional;
+
+    /**
+     * 返回类型
+     */
     private final Class<?> returnType;
     private final String mapKey;
     private final Integer resultHandlerIndex;
@@ -295,10 +323,14 @@ public class MapperMethod {
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
+
+      // 初始化 returnType 等属性
       Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, mapperInterface);
-      if (resolvedReturnType instanceof Class<?>) {
+      if (resolvedReturnType instanceof Class<?>) {//普通类
+
+        //初始化返回类型
         this.returnType = (Class<?>) resolvedReturnType;
-      } else if (resolvedReturnType instanceof ParameterizedType) {
+      } else if (resolvedReturnType instanceof ParameterizedType) {//泛型
         this.returnType = (Class<?>) ((ParameterizedType) resolvedReturnType).getRawType();
       } else {
         this.returnType = method.getReturnType();

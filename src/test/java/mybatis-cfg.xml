@@ -10,9 +10,9 @@
     </settings>
 
     <!-- 别名 -->
-    <typeAliases>
-         <typeAlias type="com.lfq.User" alias="User"/>
-    </typeAliases>
+    <!--<typeAliases>-->
+         <!--<typeAlias type="com.lfq.User" alias="User"/>-->
+    <!--</typeAliases>-->
 
     <!-- 配置环境变量，可以配置多个，有默认值 -->
     <environments default="development">

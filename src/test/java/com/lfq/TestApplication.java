@@ -28,6 +28,7 @@ public class TestApplication {
 
         /**
          * 关于builder模式：对于复杂对象构建，逻辑都在构造方法中构建对象不友好，应一步步有秩序创建，降低复杂度。
+         * Builder模式本质上是一种特殊的工厂模式,按照流水线方式调用,然后最后检查产品是否合格,流水线之间可以任意组合,达到了高度的灵活性.
          * 可参考这篇文章介绍 （深入理解Builder模式https://www.jianshu.com/p/50fed6d2b257）
          *
          *

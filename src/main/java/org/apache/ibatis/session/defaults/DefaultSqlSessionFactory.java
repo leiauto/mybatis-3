@@ -95,7 +95,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   /**
    * 根据设定Session的SQL执行器的类型、事务类型和是否自动提交获取sqlSession
    *
-   * @param execType SIMPLE, REUSE, BATCH {@link ExecutorType}，默认simple
+   * @param execType SIMPLE, REUSE（执行器复用）, BATCH （执行器重用语句批量更新）{@link ExecutorType}，默认simple
    * @param level 数据库事务隔离级别 null
    * @param autoCommit 是否自动提交
    * @return

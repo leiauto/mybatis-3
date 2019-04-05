@@ -68,7 +68,7 @@ public class XMLScriptBuilder extends BaseBuilder {
   public SqlSource parseScriptNode() {
 
     //获取select/update/insert/delete节点下的Sql语句节点包装成相应的SqlNode对象
-    //每个CRUD语句可能都有多个SqlNode对象
+    //解析 SQL
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
     if (isDynamic) {
@@ -89,8 +89,12 @@ public class XMLScriptBuilder extends BaseBuilder {
 
     //获取CRUD节点下所有子节点，包括文本内容<trim>等动态sql节点
     NodeList children = node.getNode().getChildNodes();
+
+    //遍历 SQL 节点的所有子节点
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
+
+      // 如果类型是 Node.CDATA_SECTION_NODE(子节点一定为TextNode) 或者 Node.TEXT_NODE(纯文本，它没有子节点) 时
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
         String data = child.getStringBody("");
         TextSqlNode textSqlNode = new TextSqlNode(data);
@@ -100,6 +104,8 @@ public class XMLScriptBuilder extends BaseBuilder {
         } else {
           contents.add(new StaticTextSqlNode(data));
         }
+
+      // 如果类型是 Node.ELEMENT_NODE(元素标签节点)
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
         String nodeName = child.getNode().getNodeName();
         NodeHandler handler = nodeHandlerMap.get(nodeName);

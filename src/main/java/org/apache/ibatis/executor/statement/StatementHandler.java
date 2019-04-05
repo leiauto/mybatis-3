@@ -26,6 +26,9 @@ import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.session.ResultHandler;
 
 /**
+ *
+ * Statement 处理器，其中 Statement 包含 java.sql.Statement、java.sql.PreparedStatement、java.sql.CallableStatement 三种。
+ *
  * @author Clinton Begin
  */
 public interface StatementHandler {
